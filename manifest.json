@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Tab Apple",
+  "version": "1.0",
+  "description": "Customize new tab as Vison OS style.",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "permissions": [
+    "history", 
+    "management", 
+    "bookmarks", 
+    "tabs",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "worker.js"
+  }
+}
