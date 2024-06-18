@@ -1,8 +1,10 @@
+import { delay } from "./lib.js";
+
 class Ease {
   static easeOutExpo = (x) => { return x === 1 ? 1 : 1 - Math.pow(2, -10 * x); }
 }
 
-export function addDragToScrollAnimation(rootElem, direction = 'vertical') {
+export function addDragToScrollAnimation(rootElem, direction = 'vertical', callback) {
   [...rootElem.children].forEach(_elem => {
     _elem.style.width = '100%';
     _elem.style.height = '100%';
@@ -62,6 +64,9 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical') {
       if (info.isIntersecting) {
         const i = childrenIdxMap.get(info.target);
         GCurrentIdx = i;
+
+        if (callback) callback(GCurrentIdx);
+
         return;
       }
     }
@@ -177,5 +182,27 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical') {
     if (idx < 0 || n <= idx) console.error("Wrong idx range");
   }
 
-  return [moveToIdx];
+  const prev = () => {
+    moveTo(getScrollPositionByIdx(minMax(GCurrentIdx - 1, 0, n - 1)), GDuration);
+  }
+
+  const next = () => {
+    moveTo(getScrollPositionByIdx(minMax(GCurrentIdx + 1, 0, n - 1)), GDuration);
+  }
+
+
+  return { moveToIdx, prev, next };
+}
+
+export async function fadeIn(elem) {
+  elem.style.transform = 'scale(1.5)';
+  elem.style.opacity = '0';
+  elem.style.filter = 'blur(10px)';
+
+  await delay(100);
+
+  elem.style.transition = `ease 450ms`;
+  elem.style.transform = '';
+  elem.style.opacity = ''; 
+  elem.style.filter = '';
 }

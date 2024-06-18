@@ -1,14 +1,18 @@
 import { Component, renderMap } from "../assets/core.js";
-import { addDragToScrollAnimation } from "../assets/animation.js";
+import { addDragToScrollAnimation, fadeIn } from "../assets/animation.js";
+import { throttle } from "../assets/lib.js";
 
 export default class App extends Component {
   css = `
+    :host {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
     main {
       color: #fff;
       font-family: 'SF-Pro';
-    }
-
-    main {
       width: 100vw;
       height: 100vh;
       display: grid;
@@ -17,21 +21,33 @@ export default class App extends Component {
       justify-items: center;
     }
 
+    .sidebar-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .sidebar-container app-window {
+      position: absolute;
+      top: 50%;
+      right: 30px;
+      transform: translateY(-50%);
+    }
+
     .sidebar {
       width: fit-content;
       height: fit-content;
       padding: 11px 10px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: clamp(10px, 1vw, 12px);
     }
     .sidebar li {
-      padding: 10px;
+      padding: clamp(10px, 1vw, 12px);
       border-radius: 999px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: 300ms ease;
+      transition: var(--duration);
       cursor: pointer;
     }
     .sidebar li:hover {
@@ -41,10 +57,10 @@ export default class App extends Component {
       background-color: rgba(255, 255, 255, 18%);
     }
     .sidebar li svg {
-      width: 22px;
-      height: 22px;
-      fill: #98989D;
-      transition: 300ms ease;
+      width: clamp(22px, 2vw, 36px);
+      height: clamp(22px, 2vw, 36px);
+      fill: var(--gray);
+      transition: var(--duration);
     }
     .sidebar li.select svg {
       fill: #fff;
@@ -54,9 +70,11 @@ export default class App extends Component {
     }
 
     .content {
-      width: 90%;
-      height: 90%;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
+      -webkit-mask-image: linear-gradient(to left, transparent 5%, black 10%, black 90%, transparent 95%);
+      mask-image: linear-gradient(to left, transparent 1%, black 4%, black 96%, transparent 99%);
     }
     .content > li {
       width: 100%;
@@ -115,13 +133,15 @@ export default class App extends Component {
   render() {
     this.shadowRoot.innerHTML = `
       <main>
-        <app-window>
-          <ul class="sidebar">
-          ${renderMap(this.itemList, ({ icon }) => `
-            <li>${icon}</li>
-          `)}
-          </ul>
-        </app-window>
+        <section class="sidebar-container">
+          <app-window radius="999">
+            <ul class="sidebar">
+            ${renderMap(this.itemList, ({ icon }) => `
+              <li>${icon}</li>
+            `)}
+            </ul>
+          </app-window>
+        </section>
 
         <section class="content">
         ${renderMap(this.itemList, ({ content }) => content)}
@@ -135,24 +155,37 @@ export default class App extends Component {
   selectIdx = 0;
 
   firstUpdated() {
+    const main = this.shadowRoot.querySelector("main");
     const content = this.shadowRoot.querySelector(".content");
-    const [moveToIdx] = addDragToScrollAnimation(content);
-
     const sidebar = this.shadowRoot.querySelector(".sidebar");
     const sidebarList = [...sidebar.children];
-    
-    sidebarList[this.selectIdx].classList.add('select');
+
+    const animateSidebar = (idx) => {
+      chrome.storage.local.set({ "appIdx": idx });
+      sidebarList[this.selectIdx].classList.remove('select');
+      this.selectIdx = idx;
+      sidebarList[this.selectIdx].classList.add('select');
+    }
+
+    const { moveToIdx, prev, next } = addDragToScrollAnimation(content, 'vertical', animateSidebar);
+
+    main.addEventListener("wheel", throttle((e) => {
+      if (e.deltaY < 0) prev();
+      else next();
+    }, 300), { passive: true });
+
     sidebarList.forEach((li, idx) => {
       li.addEventListener('click', () => {
         if (idx === this.selectIdx) return;
-
-        sidebarList[this.selectIdx].classList.remove('select');
-        this.selectIdx = idx;
-        li.classList.add('select');
-
         moveToIdx(idx);
       })
     });
-    
+
+    chrome.storage.local.get("appIdx", ({ appIdx }) => {
+      if (typeof appIdx === 'number') this.selectIdx = appIdx;
+      moveToIdx(this.selectIdx);
+    });
+
+    fadeIn(main);
   }
 } 

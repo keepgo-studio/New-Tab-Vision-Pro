@@ -4,7 +4,10 @@
 }
 
 :root {
-
+	--gray: #98989D;
+	--window: rgba(128, 128, 128, 30%);
+	--shadow: 0px 7px 10px 0px rgba(0, 0, 0, 0.19);
+	--duration: 300ms ease;
 }
 
 /* http://meyerweb.com/eric/tools/css/reset/ 

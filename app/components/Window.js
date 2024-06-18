@@ -1,17 +1,18 @@
 import { Component } from "../assets/core.js";
 
-const BORDER_RADIUS = 46;
 const STROKE_SIZE = 1.5;
 
 export default class Window extends Component {
+  radius;
+  background;
 
-  css =`
+  css = () => `
     div {
       position: relative;
       width: fit-content;
       height: fit-content;
-      background: rgba(128, 128, 128, 30%);
-      border-radius: ${BORDER_RADIUS}px;
+      border-radius: ${this.radius}px;
+      background: ${this.background};
       backdrop-filter: blur(24px);
       overflow: hidden;
     }
@@ -25,7 +26,7 @@ export default class Window extends Component {
       right: 0; 
       bottom: 0;
       padding: ${STROKE_SIZE}px;
-      border-radius: ${BORDER_RADIUS}px;
+      border-radius: ${this.radius}px;
       background: linear-gradient(
         -184deg,
         rgba(255, 255, 255, 40%) 0%,
@@ -42,6 +43,10 @@ export default class Window extends Component {
       mask-composite: exclude;
     }
   `
+  beforeMount() {
+    this.background = this.getAttribute("background") ? this.getAttribute("background") : "var(--window)";
+    this.radius = this.getAttribute("radius") ? this.getAttribute("radius") : 46;
+  }
 
   render() {
     this.shadowRoot.innerHTML = `

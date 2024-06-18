@@ -29,7 +29,9 @@ export class Component extends HTMLElement {
 
   attachStyle() {
     const style = document.createElement('style');
-    style.innerHTML = `${this.resetCss} ${this.css.trim()}`;
+    let sheet = typeof this.css === 'function' ? this.css() : this.css;
+
+    style.innerHTML = `${this.resetCss} ${sheet.trim()}`;
 
     this.shadowRoot.prepend(style);
   }
