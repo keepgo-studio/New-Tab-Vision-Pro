@@ -203,6 +203,6 @@ export async function fadeIn(elem) {
 
   elem.style.transition = `ease 450ms`;
   elem.style.transform = '';
-  elem.style.opacity = ''; 
+  elem.style.opacity = '1'; 
   elem.style.filter = '';
 }

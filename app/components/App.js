@@ -1,6 +1,6 @@
 import { Component, renderMap } from "../assets/core.js";
 import { addDragToScrollAnimation, fadeIn } from "../assets/animation.js";
-import { throttle } from "../assets/lib.js";
+import { delay, throttle } from "../assets/lib.js";
 
 export default class App extends Component {
   css = `
@@ -16,9 +16,10 @@ export default class App extends Component {
       width: 100vw;
       height: 100vh;
       display: grid;
-      grid-template-columns: 20% 1fr;
+      grid-template-columns: 15% 1fr;
       align-items: center;
       justify-items: center;
+      opacity: 0;
     }
 
     .sidebar-container {
@@ -57,8 +58,8 @@ export default class App extends Component {
       background-color: rgba(255, 255, 255, 18%);
     }
     .sidebar li svg {
-      width: clamp(22px, 2vw, 36px);
-      height: clamp(22px, 2vw, 36px);
+      width: clamp(22px, 2vw, 32px);
+      height: clamp(22px, 2vw, 32px);
       fill: var(--gray);
       transition: var(--duration);
     }
@@ -148,6 +149,7 @@ export default class App extends Component {
         </section>
       </main>
 
+      <app-boot></app-boot>
       <app-background></app-background>
     `;
   }
@@ -181,11 +183,24 @@ export default class App extends Component {
       })
     });
 
-    chrome.storage.local.get("appIdx", ({ appIdx }) => {
-      if (typeof appIdx === 'number') this.selectIdx = appIdx;
+    chrome.storage.local.get(["appIdx", "boot"], async ({ appIdx, boot }) => {
+      const bootElem = this.shadowRoot.querySelector("app-boot");
+      
+      if (boot) {
+        bootElem.dispatchEvent(new CustomEvent('boot'));
+        await delay(5500);
+      } else {
+        this.shadowRoot.querySelector("app-boot").remove();
+      }
+
+      fadeIn(main);
+
+      if (typeof appIdx === 'number') {
+        this.selectIdx = appIdx;
+      }
+
       moveToIdx(this.selectIdx);
     });
 
-    fadeIn(main);
   }
 } 

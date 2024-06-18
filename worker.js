@@ -228,6 +228,8 @@ function main() {
   chrome.tabs.onRemoved.addListener((tabId) => {
     MessageManager.remove(tabId);
   })
+
+  chrome.storage.local.set({ boot: true });
 }
 
 chrome.runtime.onInstalled.addListener(() => main());
