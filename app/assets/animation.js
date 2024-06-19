@@ -1,9 +1,10 @@
-import { delay } from "./lib.js";
+import { delay, roundToThirdDecimal } from "./lib.js";
 
 class Ease {
   static easeOutExpo = (x) => { return x === 1 ? 1 : 1 - Math.pow(2, -10 * x); }
 }
 
+// [ ] resize event handler
 export function addDragToScrollAnimation(rootElem, direction = 'vertical', callback) {
   [...rootElem.children].forEach(_elem => {
     _elem.style.width = '100%';
@@ -92,8 +93,8 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
       if (isMouseDown) return;
 
       const currentTime = Date.now(),
-        time = Math.min(1, ((currentTime - start) / duration)),
-        easedT = Ease.easeOutExpo(time);
+            time = Math.min(1, ((currentTime - start) / duration)),
+            easedT = Ease.easeOutExpo(roundToThirdDecimal(time));
 
       rootElem[scrollRef] = (easedT * (dest - from)) + from;
 
@@ -102,6 +103,10 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
     }
 
     requestAnimationFrame(scroll);
+  }
+
+  function directMoveTo(idx) {
+    rootElem[scrollRef] = getScrollPositionByIdx(minMax(idx, 0, n - 1));
   }
 
   rootElem.addEventListener('mousedown', (e) => {
@@ -139,7 +144,8 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
   }
 
   function styleChild(elem) {
-    const ratio = getRatio(elem);
+    const ratio = roundToThirdDecimal(getRatio(elem));
+
     elem.style.scale = String(scaleInit + (1 - ratio) * (1 - scaleInit));
     elem.style.opacity = String(opacityInit + (1 - ratio) * (1 - opacityInit));
   }
@@ -173,11 +179,15 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
 
   // ---------------------------------------------------------------------------------------
   setTimeout(() => {
-    rootElem[scrollRef] = getScrollPositionByIdx(0);
+    directMoveTo(0);
   });
 
-  const moveToIdx = (idx) => {
-    moveTo(getScrollPositionByIdx(minMax(idx, 0, n - 1)), GDuration);
+  const moveToIdx = (idx, mode = 'smooth') => {
+    if (mode === 'smooth') {
+      moveTo(getScrollPositionByIdx(minMax(idx, 0, n - 1)), GDuration);
+    } else if (mode === 'direct') {
+      directMoveTo(idx);
+    }
 
     if (idx < 0 || n <= idx) console.error("Wrong idx range");
   }

@@ -76,7 +76,7 @@ export default class Home extends Component {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #fff;
+      cursor: pointer;
     }
     img {
       display: inline-block;

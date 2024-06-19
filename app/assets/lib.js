@@ -17,3 +17,7 @@ export function throttle(callback, delay) {
 export function delay(n = IOS_DURATION) {
   return new Promise(res => setTimeout(() => res(true), n));
 }
+
+export function roundToThirdDecimal(num) {
+  return Math.round(num * 1000) / 1000;
+}

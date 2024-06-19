@@ -6,10 +6,33 @@ export class Component extends HTMLElement {
       border: 0;
       font: inherit;
       vertical-align: baseline;
+      color: inherit;
+      text-decoration: inherit;
     }
     
     li {
       display: block;
+    }
+
+    ::-webkit-scrollbar {
+      width:  10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: rgba(46, 46, 46, 0.3);
+      border-radius: 999px;
+      background-clip: padding-box;
+      border: 3px solid transparent;
+      cursor: pointer;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: #fff;  
+    }
+
+    ::-webkit-scrollbar-track {
+      background-color: transparent;
+      border-radius: 999px;
     }
   `
   css = ``;

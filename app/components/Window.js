@@ -9,11 +9,9 @@ export default class Window extends Component {
   css = () => `
     div {
       position: relative;
-      width: fit-content;
-      height: fit-content;
       border-radius: ${this.radius}px;
       background: ${this.background};
-      backdrop-filter: blur(24px);
+      backdrop-filter: blur(16px);
       overflow: hidden;
     }
 

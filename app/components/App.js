@@ -52,7 +52,7 @@ export default class App extends Component {
       cursor: pointer;
     }
     .sidebar li:hover {
-      background-color: rgba(255, 255, 255, 10%);
+      background-color: rgba(255, 255, 255, 8%);
     }
     .sidebar li.select {
       background-color: rgba(255, 255, 255, 18%);
@@ -74,8 +74,6 @@ export default class App extends Component {
       width: 100%;
       height: 100%;
       overflow: hidden;
-      -webkit-mask-image: linear-gradient(to left, transparent 5%, black 10%, black 90%, transparent 95%);
-      mask-image: linear-gradient(to left, transparent 1%, black 4%, black 96%, transparent 99%);
     }
     .content > li {
       width: 100%;
@@ -193,13 +191,12 @@ export default class App extends Component {
         this.shadowRoot.querySelector("app-boot").remove();
       }
 
-      fadeIn(main);
-
       if (typeof appIdx === 'number') {
         this.selectIdx = appIdx;
       }
 
-      moveToIdx(this.selectIdx);
+      moveToIdx(this.selectIdx, 'direct');
+      fadeIn(main);
     });
 
   }
