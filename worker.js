@@ -106,7 +106,7 @@ class MessageManager {
 }
 
 class HistoryStore {
-  static ITEM_LIMIT = 30;
+  static ITEM_LIMIT = 100;
   // {
   //   lastVisitTime
   //   title
@@ -131,11 +131,6 @@ class HistoryStore {
 
   static async unsyncData(data) {
     await IDB.removeData(data);
-
-    MessageManager.send({
-      type: 'remove',
-      historyUrl: data.url
-    });
   }
 
   static insert(historyItem) {
