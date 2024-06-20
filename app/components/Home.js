@@ -70,8 +70,8 @@ export default class Home extends Component {
       box-shadow: var(--shadow);
     }
     a {
-      width: clamp(100px, 8vw, 160px);
-      height: clamp(100px, 8vw, 160px);
+      width: clamp(80px, 10vw, 150px);
+      height: clamp(80px, 10vw, 150px);
       border-radius: 999px;
       display: flex;
       align-items: center;

@@ -1,5 +1,6 @@
 import { Component } from "../assets/core.js";
 import IDB from "../assets/idb.js";
+import { minMax } from "../assets/lib.js";
 import MessageClientManager from "../assets/message.js";
 
 const ITEM_HEIGHT = 32;
@@ -21,11 +22,15 @@ export default class BookmarkList extends Component {
     }
     .bookmark {
       width: 100%;
-      aspect-ratio: 960 / 840;
       display: grid;
       grid-template-columns: auto 1fr;
     }
 
+    @media only screen and (min-height: 840px) {
+      .bookmark {
+        aspect-ratio: 960 / 840;
+      }
+    }
     @media only screen and (min-width: 1200px) {
       .bookmark {
         max-height: 840px;
@@ -46,15 +51,16 @@ export default class BookmarkList extends Component {
     .sidebar .resizer {
       position: absolute;
       top: 0;
-      right: -6%;
-      width: 12%;
+      right: 0;
+      width: 50px;
       height: 100%;
+      transform: translateX(50%);
     }
     .sidebar .resizer .cursor {
       position: absolute;
       top: 50%;
-      left: 50%;
-      transform: translate(135%, -50%);
+      right: 8px;
+      transform: translateY(-50%);
       transition: var(--duration);
       width: clamp(4px, 0.5vw ,5px);
       border-radius: 999px;
@@ -162,7 +168,6 @@ export default class BookmarkList extends Component {
   `;
 
   tree = [];
-  sidebarWidth = 240;
   favIconMapByUrl = {};
   folderTreeRef = {
     roots: []
@@ -487,7 +492,7 @@ export default class BookmarkList extends Component {
       if (!cursorClicked) return;
       e.stopPropagation();
 
-      this.sidebarWidth = Math.max(240, this.sidebarWidth + e.movementX);
+      this.sidebarWidth = minMax(this.sidebarWidth + e.movementX, 200, 500);
 
       sidebar.style.width = `${this.sidebarWidth}px`;
     });

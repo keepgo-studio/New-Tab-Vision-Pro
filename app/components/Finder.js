@@ -7,7 +7,7 @@ export default class Finder extends Component {
       width: 100%;
       height: 100%;
       max-width: 820px;
-      max-height: 700px;
+      max-height: 50vh;
       display: flex;
       overflow-y: auto;
       flex-direction: column;

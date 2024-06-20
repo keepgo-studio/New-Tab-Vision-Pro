@@ -20,6 +20,8 @@ export default class App extends Component {
       align-items: center;
       justify-items: center;
       opacity: 0;
+      max-width: 1440px;
+      margin: auto;
     }
 
     .sidebar-container {
@@ -30,8 +32,8 @@ export default class App extends Component {
     .sidebar-container app-window {
       position: absolute;
       top: 50%;
-      right: 30px;
-      transform: translateY(-50%);
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
 
     .sidebar {

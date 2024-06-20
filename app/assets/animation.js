@@ -1,10 +1,9 @@
-import { delay, roundToThirdDecimal } from "./lib.js";
+import { debounce, delay, minMax, roundToThirdDecimal } from "./lib.js";
 
 class Ease {
   static easeOutExpo = (x) => { return x === 1 ? 1 : 1 - Math.pow(2, -10 * x); }
 }
 
-// [ ] resize event handler
 export function addDragToScrollAnimation(rootElem, direction = 'vertical', callback) {
   [...rootElem.children].forEach(_elem => {
     _elem.style.width = '100%';
@@ -24,10 +23,11 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
 
   const GDuration = 1000,
         GSpringRatio = 0.3,
-        GItemLength = direction === 'horizontal' ? rootElem.offsetWidth : rootElem.offsetHeight,
-        GTotalLength = GItemLength * (n - 1) + GItemLength * (GSpringRatio * 2),
         GChildren = [...rootElem.children],
         scrollRef = direction === 'horizontal' ? 'scrollLeft' : 'scrollTop';
+  
+  let GItemLength = direction === 'horizontal' ? rootElem.offsetWidth : rootElem.offsetHeight,
+      GTotalLength = GItemLength * (n - 1) + GItemLength * (GSpringRatio * 2);
 
   let GCurrentIdx = 0;
 
@@ -35,12 +35,7 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
     return (_idx + GSpringRatio) * GItemLength;
   }
 
-  function minMax(x, min, max) {
-    if (x < min) return min;
-    else if (x > max) return max;
-    return x;
-  }
-
+  // TODO: div1, div2 width
   const div1 = document.createElement('div'),
         div2 = document.createElement('div'),
         dummySize = GSpringRatio * GItemLength;
@@ -109,12 +104,13 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
     rootElem[scrollRef] = getScrollPositionByIdx(minMax(idx, 0, n - 1));
   }
 
-  rootElem.addEventListener('mousedown', (e) => {
+  const mousedownHandler = (e) => {
     isMouseDown = true;
     x1 = e.x; y1 = e.y;
-  });
-
-  rootElem.addEventListener('mousemove', (e) => {
+  }
+  rootElem.addEventListener('mousedown', mousedownHandler);
+  
+  const mousemoveHandler = (e) => {
     if (!isMouseDown) return;
 
     x2 = e.x; y2 = e.y;
@@ -122,14 +118,16 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
 
     const from = rootElem[scrollRef];
     rootElem[scrollRef] = minMax(from + d, 0, GTotalLength);
-  });
+  }
+  rootElem.addEventListener('mousemove', mousemoveHandler);
 
-  ['mouseup', 'mouseleave'].forEach(event => rootElem.addEventListener(event, (e) => {
+  const mouseupHandler = (e) => {
     isMouseDown = false;
     x2 = e.x; y2 = e.y;
 
     moveTo(getScrollPositionByIdx(GCurrentIdx), GDuration);
-  }));
+  }
+  ['mouseup', 'mouseleave'].forEach(event => rootElem.addEventListener(event, mouseupHandler));
 
 
   // ---------------------------------------------------------------------------------------
@@ -171,6 +169,8 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
       styleChild(elem);
     });
 
+    if (!lifeCycle) return;
+
     requestAnimationFrame(renderChildren);
   }
 
@@ -181,6 +181,32 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
   setTimeout(() => {
     directMoveTo(0);
   });
+
+
+  window.addEventListener("resize", debounce(() => {
+    // GTotalLength, GItemLength
+    GItemLength = direction === 'horizontal' ? rootElem.offsetWidth : rootElem.offsetHeight;
+    GTotalLength = GItemLength * (n - 1) + GItemLength * (GSpringRatio * 2);
+
+    // div1, div2 width
+    const newDummySize = GSpringRatio * GItemLength;
+
+    div1.style.width = newDummySize + "px";
+    div1.style.height = newDummySize + "px";
+
+    div2.style.width = newDummySize + "px";
+    div2.style.height = newDummySize + "px";
+
+    // offsetLeftMap
+    offsetLeftMap.clear();
+    GChildren.forEach((elem, i) => {
+      offsetLeftMap.set(elem, getScrollPositionByIdx(i));
+    });
+
+    setTimeout(() => {
+      directMoveTo(GCurrentIdx);
+    });
+  }, 500));
 
   const moveToIdx = (idx, mode = 'smooth') => {
     if (mode === 'smooth') {
@@ -200,8 +226,16 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
     moveTo(getScrollPositionByIdx(minMax(GCurrentIdx + 1, 0, n - 1)), GDuration);
   }
 
+  var lifeCycle = true;
 
-  return { moveToIdx, prev, next };
+  function detach() {
+    lifeCycle = false;
+    rootElem.removeEventListener('mousedown', mousedownHandler);
+    rootElem.removeEventListener('mousemove', mousemoveHandler);
+    ['mouseup', 'mouseleave'].forEach(event => rootElem.removeEventListener(event, mouseupHandler));
+  }
+
+  return { moveToIdx, prev, next, detach };
 }
 
 export async function fadeIn(elem) {
