@@ -1,8 +1,12 @@
 import { Component } from "../assets/core.js";
+import IDB from "../assets/idb.js";
+import MessageClientManager from "../assets/message.js";
 
-const ITEM_HEIGHT = 30;
+const ITEM_HEIGHT = 32;
 
 export default class BookmarkList extends Component {
+  sidebarWidth = 260;
+
   css = `
     .container {
       width: 100%;
@@ -18,19 +22,45 @@ export default class BookmarkList extends Component {
     .bookmark {
       width: 100%;
       aspect-ratio: 960 / 840;
-      max-height: 840px;
-      min-height: 600px;
       display: grid;
       grid-template-columns: auto 1fr;
     }
 
+    @media only screen and (min-width: 1200px) {
+      .bookmark {
+        max-height: 840px;
+      }
+    }
+
     .sidebar {
       text-overflow: ellipsis;
-      background: linear-gradient(rgba(0, 0, 0, 8%), rgba(214, 214, 214, 8%)), 
-                  linear-gradient(rgba(214, 214, 214, 20%), rgba(214, 214, 214, 20%));
+      background: linear-gradient(rgba(0, 0, 0, 8%), rgba(0, 0, 0, 8%)), 
+                  linear-gradient(rgba(0, 0, 0, 20%), rgba(0, 0, 0, 20%));
       display: flex;
       flex-direction: column;
-      width: 260px;
+      width: ${this.sidebarWidth}px;
+      position: relative;
+      user-select: none;
+      border-right: solid var(--gray) 1px;
+    }
+    .sidebar .resizer {
+      position: absolute;
+      top: 0;
+      right: -6%;
+      width: 12%;
+      height: 100%;
+    }
+    .sidebar .resizer .cursor {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(135%, -50%);
+      transition: var(--duration);
+      width: clamp(4px, 0.5vw ,5px);
+      border-radius: 999px;
+      height: 8%;
+      background-color: #fff;
+      cursor: col-resize;
     }
     .sidebar .header {
       padding: 32px 28px 20px 32px;
@@ -50,28 +80,52 @@ export default class BookmarkList extends Component {
       width: 0.7em;
     }
 
-    #tree {
-      width: 88%;
+    .tree-container {
+      width: 100%;
       flex: 1;
-      aspect-ratio: 1/1;
-      overflow-x: hidden;
-      font-size: 15px;
-      letter-spacing: 0.03em;
+      position: relative;
       font-weight: 300;
-      padding-right: 2px;
-      margin: 10px auto;
+      padding: 10px 0 24px 0;
+    }
+    @media only screen and (max-width: 960px) {
+      .tree-container {
+        font-size: 14px;
+      }
+    }
+    
+    .queue {
+      position: absolute;
+      top: 0;
+      left: 2px;
+      right: 0px;
+      display: flex;
+      background: #43413e;
+    }
+    .queue > div {
+      flex: 1;
     }
 
-    #tree .children {
+    #tree {
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 1/1;
+      overflow-x: hidden;
+      overflow-y: scroll;
+      letter-spacing: 0.03em;
+    }
+
+    .folder,
+    .bookmark-item
+     {
+      margin-left: 2px;
+    }
+    .children {
       transition: var(--duration);
       height: 0px;
       overflow: hidden;
     }
-    #tree .children.child-open {
-      height: fit-content !important;
-    }
 
-    #tree .title {
+    .title {
       display: flex;
       align-items: center;
       width: 100%;
@@ -79,36 +133,138 @@ export default class BookmarkList extends Component {
       overflow: hidden;
       cursor: pointer;
     }
-    #tree .title span {
+    .title span {
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
     }
-    #tree .title img {
+    .title img {
       width: 1em;
       margin-right: 0.5em;
       object-fit: contain;
     }
 
-    #tree .bookmark-item {
+    .bookmark-item {
       display: flex;
       transition: var(--duration);
     }
-    #tree .bookmark-item:hover {
+    .bookmark-item:hover {
       background-color: rgba(255, 255, 255, 14%);
     }
 
     .content {
+      padding: 28px;
+      background: linear-gradient(rgba(0, 0, 0, 15%), rgba(0, 0, 0, 15%));
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   `;
 
   tree = [];
   sidebarWidth = 240;
-  
+  favIconMapByUrl = {};
+  folderTreeRef = {
+    roots: []
+  }
+  childrenRefMap = {};
+  queue = [];
+
+  renderImg(url, favIconUrl) {
+    Object.keys(this.favIconMapByUrl).forEach(bookmarkUrl => {
+      if (url.includes(bookmarkUrl)) {
+        this.favIconMapByUrl[bookmarkUrl].favIconUrl = favIconUrl;
+        const img = this.favIconMapByUrl[bookmarkUrl].ref.querySelector("img");
+        img.src = favIconUrl;
+      }
+    });
+  }
+
+  updateTreeHeight() {
+    const dfs = (node) => {
+      const img = node.ref.querySelector("img");
+      img.src = "/app/assets/icons/" + (node.open ? "folder.png" : "folder.fill.png");
+
+      if (!node.open) {
+        node.childrenRef.style.height = '0px';
+        return 0;
+      }
+      
+      let totalHeight = node.defaultHeight;
+      node.children.forEach(childId => {
+        totalHeight += dfs(this.folderTreeRef[childId]);
+      });
+
+      node.childrenRef.style.height = `${totalHeight}px`;
+
+      return totalHeight;
+    }
+
+    this.folderTreeRef['roots'].forEach((id) => {
+      dfs(this.folderTreeRef[id]);
+    });
+  }
+
+  sendEventToFinder(id) {
+    let data;
+    
+    const updateData = () => {
+      if (!id) return;
+
+      const currentId = this.folderTreeRef[id].open ? id : this.folderTreeRef[id].parentId;
+      
+      if (!currentId) return;
+      
+      const children = this.childrenRefMap[currentId];
+
+      data = {
+        id: currentId,
+        children: children.map(child => {
+          const isChildFolder = 'children' in child;
+          const title = child.title ? child.title : child.url;
+          const favIconUrl = this.favIconMapByUrl[child.url]?.favIconUrl;
+
+          return {
+            type: isChildFolder ? 'folder' : 'bookmark',
+            title,
+            favIconUrl,
+            id: child.id,
+            url: child?.url
+          }
+        }),
+        folderName: this.folderTreeRef[currentId].title,
+        parentExist: Boolean(this.folderTreeRef[currentId].parentId)
+      };
+    }
+
+    updateData();
+
+    const finder = this.shadowRoot.querySelector("app-finder");
+    finder.dispatchEvent(new CustomEvent("select", {
+      detail: data
+    }));
+  }
+
   beforeMount() {
     chrome.bookmarks.getTree(tree => {
       this.tree = [...tree];
       this.reRender();
+    })
+
+    MessageClientManager.listen(this, async ({ type, data }) => {
+      if (type === 'update-favicon') {
+        this.renderImg(data.url, data.favIconUrl);
+      }
+    })
+
+    this.addEventListener("folder-select", (e) => {
+      const  { id, open } = e.detail;
+
+      this.folderTreeRef[id].open = e.detail.open;
+      
+      this.updateTreeHeight();
+
+      this.sendEventToFinder(id)
     })
   }
 
@@ -116,46 +272,62 @@ export default class BookmarkList extends Component {
     const treeElem = document.createElement('div');
     treeElem.id = "tree";
 
-    treeElem.addEventListener('wheel', (e) => {
-      e.stopPropagation();
-    })
+    const queueElem = this.shadowRoot.querySelector(".queue");
+    
+    queueElem.addEventListener("click", () => {
+      const elem = queueElem.querySelector(".folder");
 
-    const folderTreeRef = {
-      roots: []
-    };
+      if (!elem) return;
 
-    const updateTreeHeight = () => {
-      const dfs = (node) => {
-        const img = node.ref.querySelector("img");
-        img.src = "/app/assets/icons/" + (node.open ? "folder.png" : "folder.fill.png");
+      const id = elem.id;
+      this.folderTreeRef[id].open = false;
+      this.queue.pop();
 
-        if (!node.open) {
-          node.childrenRef.style.height = '0px';
-          return 0;
-        }
-        
-        let totalHeight = node.defaultHeight;
-        node.children.forEach(childId => {
-          totalHeight += dfs(folderTreeRef[childId]);
-        });
+      const lastIdx = this.queue[this.queue.length - 1];
+      this.updateTreeHeight();
+      renderQueue();
+      this.sendEventToFinder(lastIdx);
+    });
 
-        node.childrenRef.style.height = `${totalHeight}px`;
+    const renderQueue = () => {
+      queueElem.innerHTML = ``;
+      if (this.queue.length === 0) return;
 
-        return totalHeight;
-      }
+      const id = this.queue[this.queue.length - 1];
+      const lastFolder = this.folderTreeRef[id];
 
-      folderTreeRef['roots'].forEach((id) => {
-        dfs(folderTreeRef[id]);
-      });
+      queueElem.append(lastFolder.ref.cloneNode(true));
     }
 
-    const recRender = (obj, parentChildrenElem, level) => {
+    const folderElemIo = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const id = entry.target.id;
+
+        if (!entry.isIntersecting) {
+          const d = entry.boundingClientRect.y - entry.rootBounds.y;
+          if (d < 0 && this.folderTreeRef[id].open) {
+            this.queue.push(entry.target.id);
+          }
+        } else {
+          const idx = this.queue.findIndex(_id => _id === id);
+          if (idx !== -1) this.queue.splice(idx, 1);
+        }
+      })
+
+      renderQueue();
+    }, {
+      threshold: 1,
+      root: treeElem
+    });
+
+    const recRender = (obj, parentId, parentChildrenElem, level) => {
       const itemDiv = document.createElement('div');
       const isFolder = 'children' in obj;
       const title = isFolder ? document.createElement('p') : document.createElement('a');
 
       itemDiv.id = obj.id;
-
+      
+      itemDiv.style.paddingLeft = '1em';
       title.style.height = `${ITEM_HEIGHT}px`;
       title.style.marginLeft = `${level * 1.5}em`;
       title.className = 'title';
@@ -172,49 +344,78 @@ export default class BookmarkList extends Component {
       parentChildrenElem.appendChild(itemDiv);
 
       if (isFolder) {
+        folderElemIo.observe(itemDiv);
+
         const children = document.createElement('div');
         
         itemDiv.classList.add("folder");
         children.classList.add("children");
         parentChildrenElem.appendChild(children);
 
-        folderTreeRef[obj.id] = {
+        this.folderTreeRef[obj.id] = {
+          id: obj.id,
+          parentId,
+          title: obj.title ? obj.title : obj.url,
           open: false,
           ref: itemDiv,
           childrenRef: children,
           children: [],
           defaultHeight: ITEM_HEIGHT * obj.children.length
         };
+        
+        this.childrenRefMap[obj.id] = obj.children;
 
-        itemDiv.addEventListener("click", () => {
-          folderTreeRef[obj.id].open = !folderTreeRef[obj.id].open;
-
-          updateTreeHeight();
+        itemDiv.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.folderTreeRef[obj.id].open = !this.folderTreeRef[obj.id].open;
+          
+          this.updateTreeHeight();
+          this.sendEventToFinder(obj.id);
         });
 
         obj.children.forEach((child) => {
-          const childId = recRender(child, children, level + 1);
+          const childId = recRender(child, obj.id, children, level + 1);
           
           if (childId) {
-            folderTreeRef[obj.id].children.push(childId);
+            this.folderTreeRef[obj.id].children.push(childId);
           }
         });
 
         return obj.id;
       }
-
+      
+      IDB.get(obj.url).then((data) => {
+        if (data && 'favIconUrl' in data && data.favIconUrl) {
+          itemDiv.querySelector("img").src=data.favIconUrl;
+        }
+      })
+      
       itemDiv.classList.add("bookmark-item");
+      
+      this.favIconMapByUrl[obj.url] = {
+        ref: itemDiv,
+        favIconUrl: undefined
+      };
+
       return undefined;
     }
 
     // 무조건 폴더가 최상위에 있다는 가정
     this.tree[0].children.forEach(item => {
-      folderTreeRef['roots'].push(recRender(item, treeElem, 0));
+      this.folderTreeRef['roots'].push(recRender(item, undefined, treeElem, 0));
     });
 
-    this.shadowRoot.querySelector(".sidebar").append(treeElem);
+    this.shadowRoot.querySelector(".tree-container").append(treeElem);
+    
+    Object.keys(this.favIconMapByUrl).forEach(async bookmarkUrl => {
+      const data = await IDB.get(bookmarkUrl);
 
-    updateTreeHeight();
+      if (data && data?.favIconUrl) {
+        this.renderImg(bookmarkUrl, data.favIconUrl);
+      }
+    });
+
+    this.updateTreeHeight();
   }
 
   render() {
@@ -223,19 +424,24 @@ export default class BookmarkList extends Component {
         <app-window>
           <div class="bookmark">
             <section class="sidebar">
+              <div class="resizer">
+                <div class="cursor"></div>
+              </div>
+
               <div class="header">
                 <h1>
                   <img src="/app/assets/icons/book.closed.fill.png" />
                   Bookmarks
                 </h1>
               </div>
+
+              <div class="tree-container">
+                <div class="queue"></div>
+              </div>
             </section>
             
             <section class="content">
-              <div class="finder"></div>
-              
-              <div class="recent">
-              </div>
+              <app-finder></app-finder>
             </section>
           </div>
         </app-window>
@@ -245,5 +451,45 @@ export default class BookmarkList extends Component {
 
   updated() {
     if (this.tree.length > 0) this.renderTree();
+
+    const bookmark = this.shadowRoot.querySelector(".bookmark");
+    const sidebar = this.shadowRoot.querySelector(".sidebar");
+    const resizer = this.shadowRoot.querySelector(".resizer");
+    const cursor = this.shadowRoot.querySelector(".cursor");
+
+    resizer.addEventListener("mouseenter", () => {
+      cursor.style.zIndex = 1;
+      cursor.style.opacity = 1;
+    });
+    resizer.addEventListener("mouseleave", () => {
+      cursor.style.opacity = 0;
+      cursor.style.zIndex= -1;
+    });
+
+    let cursorClicked = false;
+    bookmark.addEventListener("mousedown", (e) => {
+      if (e.target.className === "cursor") {
+        cursorClicked = true;
+      }
+    });
+    bookmark.addEventListener("wheel", (e) => {
+      e.stopPropagation();
+    }, {
+      passive: true
+    });
+    bookmark.addEventListener("mouseup", (e) => {
+      cursorClicked = false;
+    });
+    bookmark.addEventListener("mouseleave", () => {
+      cursorClicked = false;
+    });
+    bookmark.addEventListener("mousemove", (e) => {
+      if (!cursorClicked) return;
+      e.stopPropagation();
+
+      this.sidebarWidth = Math.max(240, this.sidebarWidth + e.movementX);
+
+      sidebar.style.width = `${this.sidebarWidth}px`;
+    });
   }
 }

@@ -51,7 +51,7 @@ export default class Background extends Component {
       } else if (7 <= hour && hour < 15) {
         this.ratio = 0;
       } else if (15 <= hour && hour < 19) {
-        this.ratio = (19 - hour) / 4;
+        this.ratio = 1 - (19 - hour) / 4;
       } else {
         this.ratio = 1;
       }

@@ -20,14 +20,11 @@ export class Component extends HTMLElement {
     }
 
     ::-webkit-scrollbar-thumb {
-      background-color: rgba(46, 46, 46, 0.3);
+      background-color: rgba(188, 188, 188, 0.3);
       border-radius: 999px;
       background-clip: padding-box;
       border: 3px solid transparent;
       cursor: pointer;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background-color: #fff;  
     }
 
     ::-webkit-scrollbar-track {

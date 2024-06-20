@@ -11,7 +11,7 @@ export default class Window extends Component {
       position: relative;
       border-radius: ${this.radius}px;
       background: ${this.background};
-      backdrop-filter: blur(16px);
+      backdrop-filter: blur(60px);
       overflow: hidden;
     }
 

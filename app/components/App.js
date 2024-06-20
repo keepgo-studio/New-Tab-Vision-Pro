@@ -160,8 +160,8 @@ export default class App extends Component {
     const sidebar = this.shadowRoot.querySelector(".sidebar");
     const sidebarList = [...sidebar.children];
 
-    const animateSidebar = (idx) => {
-      chrome.storage.local.set({ "appIdx": idx });
+    const animateSidebar = async (idx) => {
+      await chrome.storage.local.set({ "appIdx": idx });
       sidebarList[this.selectIdx].classList.remove('select');
       this.selectIdx = idx;
       sidebarList[this.selectIdx].classList.add('select');

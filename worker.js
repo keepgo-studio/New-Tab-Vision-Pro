@@ -1,3 +1,4 @@
+const LIMIT_CNT = 200;
 class IDB {
   static VERSION = 1;
   static db;
@@ -28,7 +29,28 @@ class IDB {
     };
   })
 
-  static async getAll() {
+  oldestUrl = '';
+
+  static async _preProcess() {
+    return new Promise(res => {
+      const transaction = this.db.transaction("history", "readwrite")
+      const store = transaction.objectStore("history");
+
+      const count = store.count();
+
+      count.onsuccess = async () => {
+        if (count.result >= LIMIT_CNT && this.oldestUrl) {
+          await this.removeData(this.oldestUrl);
+          this.oldestUrl = '';
+          res();
+        }
+      }
+
+      count.onerror = res();
+    })
+  }
+
+  static async get(url) {
     if (!this.db) {
       console.error("Database has not been initialized.");
       return;
@@ -37,8 +59,9 @@ class IDB {
     return new Promise(res => {
       const transaction = this.db.transaction("history", "readwrite")
       const store = transaction.objectStore("history");
-
-      store.getAll().onsuccess = (e) => res(e.target.result)
+  
+      store.get(url).onsuccess = (e) => res(e.target.result);
+      store.get(url).onerror = () => res(undefined);
     });
   }
 
@@ -48,11 +71,18 @@ class IDB {
       return;
     }
 
+    this._preProcess();
+    
+    const prevData = await this.get(data.url);
+
     return new Promise(res => {
       const transaction = this.db.transaction("history", "readwrite")
       const store = transaction.objectStore("history");
 
-      const request = store.put(data);
+      const request = store.put({
+        ...prevData,
+        ...data
+      });
 
       request.onsuccess = () => res();
 
@@ -63,7 +93,7 @@ class IDB {
     })
   }
 
-  static async removeData(data) {
+  static async removeData(url) {
     if (!this.db) {
       console.error("Database has not been initialized.");
       return;
@@ -73,7 +103,7 @@ class IDB {
       const transaction = this.db.transaction("history", "readwrite")
       const store = transaction.objectStore("history");
 
-      const request = store.delete(data.url);
+      const request = store.delete(url);
 
       request.onsuccess = () => res();
 
@@ -98,66 +128,8 @@ class MessageManager {
 
   static send(message) {
     this.clients.forEach(tabId => {
-      chrome.tabs.sendMessage(tabId, message, () => {
-        if (chrome.runtime.lastError) this.clients.delete(tabId);
-      });
+      chrome.tabs.sendMessage(tabId, message, () => {});
     });
-  }
-}
-
-class HistoryStore {
-  static ITEM_LIMIT = 100;
-  // {
-  //   lastVisitTime
-  //   title
-  //   url
-  //   imgUrl
-  //   favIconUrl
-  // }
-  static queue = [];
-
-  static find(url) {
-    return this.queue.find(item => item.url === url);
-  }
-
-  static async syncData(data) {
-    await IDB.put(data);
-
-    MessageManager.send({
-      type: 'update',
-      historyUrl: data.url
-    });
-  }
-
-  static async unsyncData(data) {
-    await IDB.removeData(data);
-  }
-
-  static insert(historyItem) {
-    const { url, title, lastVisitTime } = historyItem;
-
-    if (!url) return;
-
-    const data = { url, title, lastVisitTime };
-    this.queue.push(data);
-
-    if (this.queue.length > this.ITEM_LIMIT) {
-      const removeData = this.queue.shift();
-      this.unsyncData(removeData);
-    } else {
-      this.syncData(data);
-    }
-  }
-
-  static update(url, partialData) {
-    const idx = this.queue.findIndex(item => item.url === url);
-
-    if (idx === -1) return;
-
-    const originalData = this.queue[idx];
-    this.queue[idx] = { ...originalData, ...partialData };
-
-    this.syncData(this.queue[idx]);
   }
 }
 
@@ -174,20 +146,7 @@ async function getRecentHistory(n) {
 }
 
 function main() {
-  IDB.open().then(async () => {
-    const [prevData, recentHistory] = await Promise.all([
-      IDB.getAll(),
-      getRecentHistory(HistoryStore.ITEM_LIMIT)
-    ])
-
-    recentHistory.forEach((historyItem) => {
-      HistoryStore.insert(historyItem)
-    });
-
-    prevData.forEach(({ url, imgUrl, favIconUrl }) => {
-      HistoryStore.update(url, { imgUrl, favIconUrl })
-    });
-  });
+  IDB.open();
 
   chrome.history.onVisited.addListener(async () => {
     const { url, title, lastVisitTime } = (await getRecentHistory(1))[0];
@@ -195,15 +154,18 @@ function main() {
     const data = {
       url,
       title,
-      lastVisitTime, 
+      lastVisitTime,
       imgUrl
     };
 
-    if (url && !HistoryStore.find(url)) {
-      HistoryStore.insert(data);
-    } else {
-      HistoryStore.update(url, data);
-    }
+    if (IDB.oldestUrl === '') IDB.oldestUrl = url;
+
+    IDB.put(data).then(() => {
+      MessageManager.send({
+        type: 'update',
+        data
+      })
+    });
   });
 
   chrome.tabs.onUpdated.addListener((_, info, tab) => {
@@ -213,10 +175,16 @@ function main() {
       MessageManager.remove(tab.id);
     }
 
-    if (tab && HistoryStore.find(tab.url)) {
-      const { url, favIconUrl } = tab;
+    const { url, favIconUrl } = tab;
+    if (tab && favIconUrl) {
+      const data = { url, favIconUrl };
 
-      HistoryStore.update(url, { favIconUrl });
+      IDB.put(data).then(() => {
+        MessageManager.send({
+          type: 'update-favicon', 
+          data
+        })
+      });
     }
   });
 
@@ -224,7 +192,11 @@ function main() {
     MessageManager.remove(tabId);
   })
 
-  chrome.storage.local.set({ boot: true });
+  chrome.management.getSelf(self => {
+    chrome.storage.local.set({
+      boot: self.installType === 'development' ? false : true
+    });
+  });
 }
 
 chrome.runtime.onInstalled.addListener(() => main());

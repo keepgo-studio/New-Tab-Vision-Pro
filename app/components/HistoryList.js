@@ -26,28 +26,28 @@ export default class HistoryList extends Component {
   }
 
   beforeMount() {
-    getRecentHistory(this.LIMIT).then(async historyList => {
-      this.list = await Promise.all(
-        historyList.map(async item => {
-          const { url, title, lastVisitTime } = item;
-          const data = await IDB.get(url);
+    // getRecentHistory(this.LIMIT).then(async historyList => {
+    //   this.list = await Promise.all(
+    //     historyList.map(async item => {
+    //       const { url, title, lastVisitTime } = item;
+    //       const data = await IDB.get(url);
 
-          if (data) return data;
+    //       if (data) return data;
 
-          return { url, title, lastVisitTime };
-        })
-      );
+    //       return { url, title, lastVisitTime };
+    //     })
+    //   );
 
-      this.reRender();
-    });
+    //   this.reRender();
+    // });
 
-    MessageClientManager.listen(this, async ({ type, historyUrl }) => {
-      this.list.forEach(async (item, idx) => {
-        if (item.url === historyUrl) {
-          this.list[idx] = await IDB.get(historyUrl);
-        }
-      });
-    });
+    // MessageClientManager.listen(this, async ({ type, historyUrl }) => {
+    //   this.list.forEach(async (item, idx) => {
+    //     if (item.url === historyUrl) {
+    //       this.list[idx] = await IDB.get(historyUrl);
+    //     }
+    //   });
+    // });
   }
 
   render() {
