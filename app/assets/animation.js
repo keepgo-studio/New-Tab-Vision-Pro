@@ -135,6 +135,8 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
         scaleInit = 0.7,
         showingMap = new Map(),
         offsetLeftMap = new Map();
+  
+  let renderChildLifeCycle = true;
 
   function getRatio(elem) {
     const left = offsetLeftMap.get(elem);
@@ -161,6 +163,8 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
   });
 
   function renderChildren() {
+    if (!renderChildLifeCycle) return;
+
     GChildren.forEach((elem) => {
       const isShowing = showingMap.get(elem);
 
@@ -174,7 +178,11 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
     requestAnimationFrame(renderChildren);
   }
 
-  requestAnimationFrame(renderChildren);
+  function startRenderChild() {
+    requestAnimationFrame(renderChildren);
+  }
+
+  startRenderChild();
 
 
   // ---------------------------------------------------------------------------------------
@@ -182,8 +190,8 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
     directMoveTo(0);
   });
 
-
   window.addEventListener("resize", debounce(() => {
+    renderChildLifeCycle = false;
     // GTotalLength, GItemLength
     GItemLength = direction === 'horizontal' ? rootElem.offsetWidth : rootElem.offsetHeight;
     GTotalLength = GItemLength * (n - 1) + GItemLength * (GSpringRatio * 2);
@@ -205,6 +213,8 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
 
     setTimeout(() => {
       directMoveTo(GCurrentIdx);
+      renderChildLifeCycle = true;
+      startRenderChild();
     });
   }, 500));
 
