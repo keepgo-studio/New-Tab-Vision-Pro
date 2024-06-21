@@ -145,8 +145,8 @@ async function getRecentHistory(n) {
   return await chrome.history.search({ text: '', maxResults: n })
 }
 
-function main() {
-  IDB.open();
+async function main() {
+  await IDB.open();
 
   chrome.history.onVisited.addListener(async () => {
     const { url, title, lastVisitTime } = (await getRecentHistory(1))[0];
