@@ -66,6 +66,12 @@ export class Component extends HTMLElement {
   render() {}
   firstUpdated() {}
   updated() {}
+
+  disconnectedCallback() {
+    this.afterDetach();
+  }
+  
+  afterDetach() {}
 }
 
 export function renderMap(array, callback) {

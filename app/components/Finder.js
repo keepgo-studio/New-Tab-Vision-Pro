@@ -12,6 +12,7 @@ export default class Finder extends Component {
       overflow-y: auto;
       flex-direction: column;
       gap: 36px;
+      user-select: none;
     }
 
     .container h2 {
@@ -236,5 +237,11 @@ export default class Finder extends Component {
     if (this.currentPositionItems.length === 0) {
       this.shadowRoot.querySelector(".finder").style.display = 'none';
     }
+
+    [...this.shadowRoot.querySelectorAll(".container")].forEach(a => {
+      a.addEventListener("mousedown", (e) => {
+        e.stopPropagation();
+      })
+    });
   }
 }

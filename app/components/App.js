@@ -16,24 +16,21 @@ export default class App extends Component {
       width: 100vw;
       height: 100vh;
       display: grid;
-      grid-template-columns: 15% 1fr;
+      grid-template-columns: auto 1fr;
       align-items: center;
       justify-items: center;
       opacity: 0;
-      max-width: 1440px;
+      max-width: 1668px;
       margin: auto;
     }
 
     .sidebar-container {
-      width: 100%;
       height: 100%;
       position: relative;
-    }
-    .sidebar-container app-window {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 24px;
     }
 
     .sidebar {
@@ -171,7 +168,7 @@ export default class App extends Component {
 
     const { moveToIdx, prev, next } = addDragToScrollAnimation(content, 'vertical', animateSidebar);
 
-    main.addEventListener("wheel", throttle((e) => {
+    this.addEventListener("wheel", throttle((e) => {
       if (e.deltaY < 0) prev();
       else next();
     }, 300), { passive: true });

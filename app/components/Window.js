@@ -7,7 +7,12 @@ export default class Window extends Component {
   background;
 
   css = () => `
+    :host {
+      display: block;
+    }
+
     div {
+      height: 100%;
       position: relative;
       border-radius: ${this.radius}px;
       background: ${this.background};

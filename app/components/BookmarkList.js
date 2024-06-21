@@ -70,7 +70,7 @@ export default class BookmarkList extends Component {
     }
     .sidebar .header {
       padding: 32px 28px 20px 32px;
-      font-size: 22px;
+      font-size: 28px;
       font-weight: bold;
       letter-spacing: 0.05em;
       display: grid;
