@@ -3,13 +3,6 @@
   src: url("./app/assets/SF-Pro.ttf");
 }
 
-:root {
-	--gray: #98989D;
-	--window: rgba(128, 128, 128, 30%);
-	--shadow: 0px 7px 10px 0px rgba(0, 0, 0, 0.19);
-	--duration: 300ms ease;
-}
-
 /* http://meyerweb.com/eric/tools/css/reset/ 
    v2.0 | 20110126
    License: none (public domain)
@@ -57,4 +50,11 @@ q:before, q:after {
 table {
 	border-collapse: collapse;
 	border-spacing: 0;
+}
+
+:root {
+	--gray: #98989D;
+	--window: rgba(128, 128, 128, 30%);
+	--shadow: 0px 7px 10px 0px rgba(0, 0, 0, 0.19);
+	--duration: 300ms ease;
 }

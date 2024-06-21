@@ -18,7 +18,7 @@ export default class Home extends Component {
           "a1 a2 a3 a4 ."
           "b1 b2 b3 b4 b5"
           "c1 c2 c3 c4 .";
-        gap: 46px;
+        gap: 3vw;
       }
       ul li {
         display: flex;
@@ -70,8 +70,8 @@ export default class Home extends Component {
       box-shadow: var(--shadow);
     }
     a {
-      width: clamp(80px, 10vw, 150px);
-      height: clamp(80px, 10vw, 150px);
+      width: clamp(80px, 9vw, 120px);
+      height: clamp(80px, 9vw, 120px);
       border-radius: 999px;
       display: flex;
       align-items: center;

@@ -171,6 +171,7 @@ function main() {
   chrome.tabs.onUpdated.addListener((_, info, tab) => {
     if (tab.url === "chrome://newtab/") {
       MessageManager.add(tab.id);
+      return;
     } else {
       MessageManager.remove(tab.id);
     }

@@ -1,7 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Tab Apple",
-  "version": "1.0",
+  "name": "New Tab Vision Pro",
+  "version": "1.0.0",
+  "action": {
+    "default_icon": "icon.png"
+  },
   "description": "Customize new tab as Vison OS style.",
   "chrome_url_overrides": {
     "newtab": "index.html"

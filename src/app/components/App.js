@@ -20,7 +20,7 @@ export default class App extends Component {
       align-items: center;
       justify-items: center;
       opacity: 0;
-      max-width: 1668px;
+      max-width: 1100px;
       margin: auto;
     }
 
@@ -30,7 +30,7 @@ export default class App extends Component {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0 24px;
+      padding: 0 2vw;
     }
 
     .sidebar {
