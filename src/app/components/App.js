@@ -11,22 +11,20 @@ export default class App extends Component {
       overflow: hidden;
     }
     main {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       color: #fff;
       font-family: 'SF-Pro';
       width: 100vw;
       height: 100vh;
-      display: grid;
-      grid-template-columns: auto 1fr;
-      align-items: center;
-      justify-items: center;
       opacity: 0;
-      max-width: 1100px;
       margin: auto;
+      max-width: 1200px;
     }
 
     .sidebar-container {
       height: 100%;
-      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -73,10 +71,6 @@ export default class App extends Component {
       width: 100%;
       height: 100%;
       overflow: hidden;
-    }
-    .content > li {
-      width: 100%;
-      height: 100%;
     }
   `;
 
@@ -140,7 +134,7 @@ export default class App extends Component {
             </ul>
           </app-window>
         </section>
-
+      
         <section class="content">
         ${renderMap(this.itemList, ({ content }) => content)}
         </section>
@@ -166,7 +160,11 @@ export default class App extends Component {
       sidebarList[this.selectIdx].classList.add('select');
     }
 
-    const { moveToIdx, prev, next } = addDragToScrollAnimation(content, 'vertical', animateSidebar);
+    const { moveToIdx, prev, next } = addDragToScrollAnimation(content, {
+      direction: 'vertical', 
+      callback: animateSidebar,
+      root: this
+    });
 
     this.addEventListener("wheel", throttle((e) => {
       if (e.deltaY < 0) prev();

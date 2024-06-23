@@ -3,7 +3,7 @@ class IDB {
   static VERSION = 1;
   static db;
 
-  static open = async () => new Promise(res => {
+  static open = async () => new Promise((res, rej) => {
     const request = indexedDB.open("db", this.VERSION);
 
     request.onupgradeneeded = (e) => {
@@ -19,7 +19,7 @@ class IDB {
 
     request.onerror = (e) => {
       console.error("Database error: " + e.target.error);
-      res();
+      rej();
     };
 
     request.onsuccess = (e) => {
@@ -59,9 +59,10 @@ class IDB {
     return new Promise(res => {
       const transaction = this.db.transaction("history", "readwrite")
       const store = transaction.objectStore("history");
-  
-      store.get(url).onsuccess = (e) => res(e.target.result);
-      store.get(url).onerror = () => res(undefined);
+      
+      const request = store.get(url);
+      request.onsuccess = (e) => res(e.target.result);
+      request.onerror = () => res(undefined);
     });
   }
 
@@ -201,3 +202,7 @@ async function main() {
 }
 
 chrome.runtime.onInstalled.addListener(() => main());
+
+const keepAlive = () => setInterval(chrome.runtime.getPlatformInfo, 20e3);
+chrome.runtime.onStartup.addListener(keepAlive);
+keepAlive();

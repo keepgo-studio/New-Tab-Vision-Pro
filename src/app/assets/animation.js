@@ -4,7 +4,9 @@ class Ease {
   static easeOutExpo = (x) => { return x === 1 ? 1 : 1 - Math.pow(2, -10 * x); }
 }
 
-export function addDragToScrollAnimation(rootElem, direction = 'vertical', callback) {
+export function addDragToScrollAnimation(rootElem, option) {
+  const { direction, callback, root } = option;
+
   [...rootElem.children].forEach(_elem => {
     _elem.style.width = '100%';
     _elem.style.height = '100%';
@@ -35,7 +37,6 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
     return (_idx + GSpringRatio) * GItemLength;
   }
 
-  // TODO: div1, div2 width
   const div1 = document.createElement('div'),
         div2 = document.createElement('div'),
         dummySize = GSpringRatio * GItemLength;
@@ -108,7 +109,7 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
     isMouseDown = true;
     x1 = e.x; y1 = e.y;
   }
-  rootElem.addEventListener('mousedown', mousedownHandler);
+  root.addEventListener('mousedown', mousedownHandler);
   
   const mousemoveHandler = (e) => {
     if (!isMouseDown) return;
@@ -119,7 +120,7 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
     const from = rootElem[scrollRef];
     rootElem[scrollRef] = minMax(from + d, 0, GTotalLength);
   }
-  rootElem.addEventListener('mousemove', mousemoveHandler);
+  root.addEventListener('mousemove', mousemoveHandler);
 
   const mouseupHandler = (e) => {
     isMouseDown = false;
@@ -127,7 +128,7 @@ export function addDragToScrollAnimation(rootElem, direction = 'vertical', callb
 
     moveTo(getScrollPositionByIdx(GCurrentIdx), GDuration);
   }
-  ['mouseup', 'mouseleave'].forEach(event => rootElem.addEventListener(event, mouseupHandler));
+  ['mouseup', 'mouseleave'].forEach(event => root.addEventListener(event, mouseupHandler));
 
 
   // ---------------------------------------------------------------------------------------

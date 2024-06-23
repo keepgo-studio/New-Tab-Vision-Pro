@@ -2,12 +2,12 @@ export default class IDB {
   static VERSION = 1;
   static db;
 
-  static open = async () => new Promise(res => {
+  static open = async () => new Promise((res, rej) => {
     const request = indexedDB.open("db", this.VERSION);
 
     request.onerror = (e) => {
       console.error("Database error: " + e.target.error);
-      res();
+      rej();
     };
 
     request.onsuccess = (e) => {
